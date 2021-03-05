@@ -1,0 +1,28 @@
+{
+    "name": "pixellweb/pixmycar",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "B1nj",
+            "email": "postmaster@b1nj.fr"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Citadelle\\PixMyCar\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Citadelle\\PixMyCar\\PixMyCarServiceProvider"
+            ]
+        }
+    },
+    "require-dev": {
+
+    }
+}
