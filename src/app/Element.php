@@ -4,12 +4,7 @@
 namespace Citadelle\PixMyCar\app;
 
 
-use Citadelle\Icar\app\Adaptateur\Adaptateur;
-use App\Models\Source\Source;
 use Carbon\Carbon;
-use Citadelle\ReferentielApi\app\Ressources\Correspondance;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use SimpleXMLElement;
 
 class Element
@@ -23,23 +18,28 @@ class Element
      * @var array
      */
     protected $dates = [];
+
     /**
      * @var array
      */
     protected $nullables = [];
 
-
+    /**
+     * @var string
+     */
     protected $token;
 
-
+    const DATE_FORMAT = 'Y-m-d\TH:i:s';
 
 
     /**
      * Icar constructor.
-     * @param array $attributes
+     * @param string $token
+     * @param SimpleXMLElement $attributes
      */
     public function __construct(string $token, SimpleXMLElement $attributes)
     {
+        $this->token = $token;
         $this->fill($attributes);
     }
 
@@ -53,21 +53,19 @@ class Element
 
 
     /**
-     * @param array $attributes
+     * @param SimpleXMLElement $attributes
      */
     public function fill(SimpleXMLElement $attributes)
     {
         // On affecte les $attributs en masse avant les setters
         // Cela permet de ne pas être tributaire de l'ordre des colonnes dans le csv
         foreach ($attributes as $property => $value) {
-            $this->attributes[$property] = (string) $value;
+            $this->attributes[$property] = (string)$value;
         }
         foreach ($attributes as $property => $value) {
-            $this->__set($property, (string) $value);
+            $this->__set($property, (string)$value);
         }
     }
-
-
 
 
     /**
@@ -115,7 +113,7 @@ class Element
     {
         $date = null;
         try {
-            $date = Carbon::createFromFormat('Y-m-d H:i:s.v', $value);
+            $date = Carbon::createFromFormat(self::DATE_FORMAT, $value);
         } catch (\Exception $exception) {
             $date = null;
         }
@@ -129,10 +127,8 @@ class Element
      */
     protected function setNullable($value)
     {
-        return (empty($value) or in_array($value, ['.00'])) ? null : $value;
+        return empty($value) ? null : $value;
     }
-
-
 
 
 }

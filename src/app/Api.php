@@ -25,7 +25,6 @@ class Api
     protected $langue = 1;
 
 
-
     /**
      * Api constructor.
      * @throws PixMyCarException
@@ -50,7 +49,7 @@ class Api
      * @return string token
      * @throws PixMyCarException
      */
-    public function connect(string $pseudo, string $password) :string
+    public function connect(string $pseudo, string $password): string
     {
         try {
 
@@ -68,36 +67,12 @@ class Api
             return $response['Jeton'];
         }
 
-        throw new PixMyCarException('Api::connect : Erreur de connexion => '.$response['LibelleErreur']);
+        throw new PixMyCarException('Api::connect : Erreur de connexion => ' . $response['LibelleErreur']);
     }
 
 
     public function ping()
     {
-
-        /*$datas = [
-            'Jeton' => $this->token,
-            '',
-            '',
-            1, // langue (1 pour français)
-            3, // numtable (3 pour table véhicule)
-            "SelTotale", // selection
-            '', // droit
-            '', // storeSel
-            '-DateModifTh', // rubsTri
-            0, // numpage
-            10, // maxrecords
-            "*", // liste rubs à renvoyer    ;document.IdDocument
-            '', //recherche simple
-            '', //recherche
-            '',
-            '',
-            '',
-            ''
-        ];
-
-        return $this->client->__soapCall('WS_Select', $datas);*/
-
         return $this->client->WS_Ping('Ping');
     }
 
@@ -113,7 +88,7 @@ class Api
      * @param string|null $listeRubsAEnvoyer
      * @param string|null $rechercheSimple
      * @param array $recherche
-     * @return array
+     * @return SimpleXMLElement
      * @throws PixMyCarException
      */
     public function select(int $numTtable, string $selection, string $rubsTri = null, int $numPage = null, int $maxRecords = null, string $listeRubsAEnvoyer = null, string $rechercheSimple = null, array $recherche = [], string $droit = null, string $storeSel = null)
