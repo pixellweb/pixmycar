@@ -188,6 +188,7 @@ class Table
     }
 
     /**
+     * @note Attention à mettre le OU avant un ET
      * @param string $champ
      * @param $comparateur
      * @param null $texte
@@ -220,7 +221,8 @@ class Table
     public function __call($name, $arguments)
     {
         if (method_exists($this->class, 'scope' . ucfirst($name))) {
-            $this->class::{'scope' . ucfirst($name)}($this, $arguments);
+            $arguments = array_merge([$this], $arguments);
+            call_user_func_array([$this->class, 'scope' . ucfirst($name)], $arguments);
             return $this;
         }
     }

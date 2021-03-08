@@ -25,19 +25,19 @@ class Vehicule extends Element
         }
     }
 
-    protected function setCritheme3Attribute(string $value)
-    {
-        $this->attributes['identification'] = $value;
-    }
-
     protected function setIdThemeAttribute(string $value)
     {
         $this->attributes['id'] = $value;
     }
 
-    protected function setPlayerAttribute(string $value)
+    protected function getPlayerAttribute()
     {
         return $this->attributes['Critheme6'];
+    }
+
+    protected function getIdentifiantAttribute()
+    {
+        return $this->attributes['Critheme3'];
     }
 
 

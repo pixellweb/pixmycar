@@ -8,10 +8,11 @@ class Document extends Element
 
     const TABLE_ID = 2;
 
-    protected function getIs_imageAttribute(string $value)
+    protected function getIs_imageAttribute()
     {
+
         if (in_array($this->attributes['Mot1'], ['02_02_Tableau de bord; ', '03_15_Coffre; ', '04_04_Jante; '])
-            and in_array($this->attributes['Critere6'], ['1AvC34', '2ArP34'])
+            or in_array($this->attributes['Critere6'], ['1AvC34', '2ArP34'])
         ) {
             return true;
         }
@@ -20,16 +21,21 @@ class Document extends Element
     }
 
 
-    protected function getUrlAttribute(string $value)
+    protected function getUrlAttribute()
     {
-        $this->attributes['url'] = "https://citadelle-ws.pixmycar.com/4DCGI/WS/GetPrincipal/" . $this->token . "/" . $this->attributes['Reference'] . '/';
-        $this->attributes['preview'] = $value;
+        return $this->attributes['url'] = "https://citadelle-ws.pixmycar.com/4DCGI/WS/GetPrincipal/" . $this->token . "/" . $this->attributes['Reference'] . '/';
     }
 
 
-    protected function getPreviewAttribute(string $value)
+    protected function getPreviewAttribute()
     {
         return $this->attributes['Reference'];
+    }
+
+
+    protected function getFichierAttribute()
+    {
+        return $this->attributes['IdDocument'].'.jpg';
     }
 
     protected function setIdDocumentAttribute(string $value)

@@ -24,8 +24,8 @@ class Import extends Command
      */
     protected $signature = 'import:pixmycar
                                 {--no-cache : Suppression du système de cache.}
-                                {--identifiant=XX-22-XX : Récupère un seul véhicule.}
-                                {--date : Récupère uniquement les véhicules modifiés à partir de cette date. Format d/m/Y.}
+                                {--identifiant= : Récupère un seul véhicule. XX-22-XX}
+                                {--date= : Récupère uniquement les véhicules modifiés à partir de cette date. Format d/m/Y.}
                                 {--debug : Show process output or not. Useful for debugging.}';
 
     /**
@@ -59,15 +59,19 @@ class Import extends Command
         $progress_bar = $this->startProgressBar(0);
         $progress_bar->setMessage('Import des véhicules');
 
-        $cache_date = Cache::get('pixmycar_cache_date');
+        $cache_date = $this->option('date') ? Carbon::createFromFormat('d/m/Y', $this->option('date')) : Cache::get('pixmycar_cache_date');
 
-        if ($this->option('no-cache')) {
+        if ($this->option('no-cache') and !$this->option('date')) {
             $cache_date = null;
         }
 
         $selection_vehicules = null;
-        if (!$cache_date) {
-            $selection_vehicules = config('pixmycar.model_vehicule.class')::all()->pluck(config('pixmycar.model_vehicule.identifiant'))->toArray();
+        if (!$this->option('identifiant')) {
+            $selection_vehicules = config('pixmycar.model_vehicule.class')::whereNotNull(config('pixmycar.model_vehicule.identifiant'))->get()->pluck(config('pixmycar.model_vehicule.identifiant'))->toArray();
+        }
+
+        if ($this->option('identifiant')) {
+            $selection_vehicules = [$this->option('identifiant')];
         }
 
         $page = 1;
@@ -81,30 +85,29 @@ class Import extends Command
                 ->page($page)
                 ->take($nb_enregistrement);
 
-            if ($this->option('identifiant')) {
-                $query->identifiants([$this->option('identifiant')])->publie();
-            } elseif ($selection_vehicules) {
-                // Pas possible rechercher uniquement les publiés à cause des OU
+
+            if ($selection_vehicules) {
                 $query->identifiants($selection_vehicules);
-            } else {
-                $query->where('DateModifTh', '>=', $cache_date->format(Element::DATE_FORMAT))->publie();
             }
 
-            $vehicules = $query->get();
+            if ($cache_date) {
+                $query->where('DateModifTh', '>=', $cache_date->format(Element::DATE_FORMAT));
+            }
 
+            $vehicules = $query->publie()->get();
 
             $progress_bar->advance();
             $progress_bar->setMaxSteps($vehicules->count());
 
-            //dump($vehicules->first());
+            //dd($vehicules->first());
 
             foreach ($vehicules as $vehicule) {
-                $progress_bar->setMessage(PHP_EOL . 'Vehicule : ' . $vehicule->Critheme3 . ' photos');
+                $progress_bar->setMessage('Vehicule : ' . $vehicule->Critheme3 . ' photos');
                 $progress_bar->advance();
 
                 $documents = $this->getDocuments($vehicule);
 
-                $vehicule_model = config('pixmycar.model_vehicule.class')::where(config('pixmycar.model_vehicule.identifiant'), $vehicule->identifiant)->with('images')->fitst();
+                $vehicule_model = config('pixmycar.model_vehicule.class')::where(config('pixmycar.model_vehicule.identifiant'), $vehicule->identifiant)->with('images')->first();
 
                 if (!$vehicule_model) {
                     continue;
@@ -119,11 +122,7 @@ class Import extends Command
                         continue;
                     }
 
-                    if ($document->is_illustration) {
-                        $vehicule_model->pixmycar_preview = $document->preview;
-                    }
-
-                    $media = $vehicule_model->images->where('fichier', $document->id)->first();
+                    $media = $vehicule_model->images->where('fichier', $document->fichier)->first();
 
                     if ($media) {
                         if (File::exists($media->path)) {
@@ -132,24 +131,25 @@ class Import extends Command
                     } else {
                         // Enregistrement en bdd
                         $media = new Media;
-                        $media->titre = 'TODO';
-                        $media->fichier = $document->id;
+                        $media->titre = $document->Mot1;
+                        $media->fichier = $document->fichier;
                         $media->type = Media::TYPE_IMAGE;
                         $media->repertoire = 'pixmycar';
                         $media->publication_id = $vehicule_model->id;
                         $media->publication_type = config('pixmycar.model_vehicule.class');
                         $media->groupe = 'pixmycar';
                         $media->save();
+
                     }
 
                     $fichier = file_get_contents($document->url);
-                    file_put_contents(config('ipsum.media.path').'/pixmycar/'.$document->id.'.jpg', $fichier);
+                    file_put_contents(public_path(config('ipsum.media.path').'pixmycar/'.$document->fichier), $fichier);
 
-                    $ids[] = $document->id;
+                    $ids[] = $document->fichier;
                 }
 
                 // Suppression des medias qui n'existe plus
-                foreach ($vehicule_model->medias->whereNotIn('fichier', $ids)->get() as $media) {
+                foreach ($vehicule_model->medias->whereNotIn('fichier', $ids) as $media) {
                     $media->delete();
                     if (File::exists($media->path)) {
                         \Croppa::delete($media->cropPath);
@@ -165,7 +165,7 @@ class Import extends Command
         } while ($vehicules->count() == $nb_enregistrement);
 
         if (!$this->option('no-cache')) {
-            Cache::put(Carbon::now(), 'value');
+            Cache::put('pixmycar_cache_date', Carbon::now());
         }
 
         $this->finishProgressBar($progress_bar);
@@ -175,37 +175,13 @@ class Import extends Command
     protected function getDocuments(Vehicule $vehicule): Collection
     {
         return Document::query()
-            ->select(['IdDocument', 'Critere6', 'MotsClesImage1', 'Reference', 'Mot1'])
+            ->select(['IdDocument', 'MotsClesImage1', 'Critere6', 'Reference'])
             ->join($vehicule, $vehicule->id)
             ->orderBy('DateModifTh', 'desc')
             ->get()
-            ->sortByDesc('is_illustration');
-    }
-
-    private function test()
-    {
-
-        //$documents = Document::query()->select(['*'])->where('Critere3', "ET-296-QB")->orderBy('DateModifTh', 'desc')->take(1)->get();
-        $documents = Document::query()->select(['*'])->where('TypeFichierPpal', 'Plate-forme Video')->orderBy('DateModifTh', 'desc')->take(1)->get();
-        dd($documents);
-
-        $vehicules = Vehicule::query()->select(['theme.IdTheme', 'theme.Critheme3', 'theme.TitreTheme', 'theme.Critheme6'])->take(2)->orderBy('DateModifTh', 'desc')->where('Critheme2', 'Land Cruiser')->get();
-
-        dd($vehicules->first());
-
-        $pixmycar = new Api();
-
-        $vehicules = $pixmycar->vehicules('SelTotale', '-DateModifTh', 0, 1000, '*');
-        //$test = $pixmycar->select(3, "SelTotale");
-
-        //$test = $pixmycar->select(3, "SelTotale", '-DateModifTh', 0, 10, "theme.IdTheme;theme.Critheme3;theme.TitreTheme;theme.Critheme6", '', ['Critheme10;C;4']);
-
-        foreach ($vehicules as $vehicule) {
-
-            dd($vehicule);
-        }
-
-        //$pixmycar->getVehicules($nb_enregistrement);
+            ->sortBy(function ($document, $key) {
+                return $document->is_illustration !== true;
+            });
     }
 
 

@@ -4,6 +4,7 @@ namespace Citadelle\PixMyCar;
 
 
 use Citadelle\PixMyCar\app\Console\Commands\Import;
+use Citadelle\PixMyCar\app\Console\Commands\Test;
 use Illuminate\Support\ServiceProvider;
 
 class PixMyCarServiceProvider extends ServiceProvider
@@ -11,6 +12,7 @@ class PixMyCarServiceProvider extends ServiceProvider
 
     protected $commands = [
         Import::class,
+        Test::class,
     ];
 
     /**

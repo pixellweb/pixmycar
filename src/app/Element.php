@@ -98,7 +98,9 @@ class Element
     public function __get($name)
     {
 
-        if (array_key_exists($name, $this->attributes)) {
+        if (method_exists($this, 'get' . lcfirst($name) . 'Attribute')) {
+            return $this->{'get' . lcfirst($name) . 'Attribute'}();
+        } elseif (array_key_exists($name, $this->attributes)) {
             return $this->attributes[$name];
         }
 
