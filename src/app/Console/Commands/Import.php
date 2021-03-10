@@ -96,7 +96,6 @@ class Import extends Command
 
             $vehicules = $query->publie()->get();
 
-            $progress_bar->advance();
             $progress_bar->setMaxSteps($vehicules->count());
 
             //dd($vehicules->first());
@@ -107,7 +106,11 @@ class Import extends Command
 
                 $documents = $this->getDocuments($vehicule);
 
-                $vehicule_model = config('pixmycar.model_vehicule.class')::where(config('pixmycar.model_vehicule.identifiant'), $vehicule->identifiant)->with('images')->first();
+                $vehicule_model = config('pixmycar.model_vehicule.class')::where(config('pixmycar.model_vehicule.identifiant'), $vehicule->identifiant)
+                    ->with(['images' => function($query) {
+                        $query->where('groupe', 'pixmycar');
+                    }])
+                    ->first();
 
                 if (!$vehicule_model) {
                     continue;
@@ -149,7 +152,7 @@ class Import extends Command
                 }
 
                 // Suppression des medias qui n'existe plus
-                foreach ($vehicule_model->medias->whereNotIn('fichier', $ids) as $media) {
+                foreach ($vehicule_model->images->whereNotIn('fichier', $ids) as $media) {
                     $media->delete();
                     if (File::exists($media->path)) {
                         \Croppa::delete($media->cropPath);
