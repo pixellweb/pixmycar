@@ -108,7 +108,7 @@ class Import extends Command
 
                 $vehicule_model = config('pixmycar.model_vehicule.class')::where(config('pixmycar.model_vehicule.identifiant'), $vehicule->identifiant)
                     ->with(['images' => function($query) {
-                        $query->where('groupe', 'pixmycar');
+                        $query->where('repertoire', 'pixmycar');
                     }])
                     ->first();
 
@@ -140,7 +140,7 @@ class Import extends Command
                         $media->repertoire = 'pixmycar';
                         $media->publication_id = $vehicule_model->id;
                         $media->publication_type = config('pixmycar.model_vehicule.class');
-                        $media->groupe = 'pixmycar';
+                        $media->groupe = null;
                         $media->save();
 
                     }
