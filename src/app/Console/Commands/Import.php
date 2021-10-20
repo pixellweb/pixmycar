@@ -110,6 +110,7 @@ class Import extends Command
                     ->with(['images' => function($query) {
                         $query->where('repertoire', 'pixmycar');
                     }])
+                    ->latest()
                     ->first();
 
                 if (!$vehicule_model) {
